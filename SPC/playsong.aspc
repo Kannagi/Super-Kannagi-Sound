@@ -1,0 +1,645 @@
+.MACRO MIDI_playend
+
+	mov a,!offset+(2*\1)
+	cmp a,!ticks
+	beq +
+		ret
+	+:
+	
+	mov a,!offset+1+(2*\1)
+	cmp a,!ticks+1
+	beq +
+		ret
+	+:
+	
+	mov a,#0
+	mov !mode+\1,a
+	
+	
+	
+
+	
+	WDSP VOLL+($10*\1),$00
+	WDSP VOLR+($10*\1),$00
+		/*
+	WDSP RL+($10*\1),0
+	WDSP RH+($10*\1),0
+	*/
+
+
+	mov a,!lecture+(2*\1)
+	clrc
+	adc	a,!poffset+\1
+	mov !lecture+(2*\1),a
+	
+	mov a,!lecture+1+(2*\1)
+	adc	a,#0
+	mov !lecture+(2*\1)+1,a
+	
+	
+.ENDM
+
+	
+playsongend:
+
+	mov a,!toffset
+	cmp a,#0
+	bne +
+		jmp !playsongendc0
+	+:
+	cmp a,#1
+	bne +
+		jmp !playsongendc1
+	+:
+	cmp a,#2
+	bne +
+		jmp !playsongendc2
+	+:
+	cmp a,#3
+	bne +
+		jmp !playsongendc3
+	+:
+	cmp a,#4
+	bne +
+		jmp !playsongendc4
+	+:
+	cmp a,#5
+	bne +
+		jmp !playsongendc5
+	+:
+	cmp a,#6
+	bne +
+		jmp !playsongendc6
+	+:
+	cmp a,#7
+	bne +
+		jmp !playsongendc7
+	+:
+
+
+	ret
+	
+playsongendc0:
+	MIDI_playend 0
+	jmp !playsongendn
+playsongendc1:
+	MIDI_playend 1
+	jmp !playsongendn	
+playsongendc2:
+	MIDI_playend 2
+	jmp !playsongendn
+playsongendc3:
+	MIDI_playend 3
+	jmp !playsongendn
+playsongendc4:
+	MIDI_playend 4
+	jmp !playsongendn
+playsongendc5:
+	MIDI_playend 5
+	jmp !playsongendn
+playsongendc6:
+	MIDI_playend 6
+	jmp !playsongendn
+playsongendc7:
+	MIDI_playend 7
+	jmp !playsongendn
+	
+playsongendn:
+
+	
+	
+	call !upload_offset
+	
+	ret
+	
+	
+.MACRO MIDI_play
+
+	mov a,!offset+(2*\1)
+	cmp a,!ticks
+	beq +
+		ret
+	+:
+	
+	mov a,!offset+1+(2*\1)
+	cmp a,!ticks+1
+	beq +
+		ret
+	+:
+	
+	mov a,#1
+	mov !mode+\1,a
+
+	mov y,!volume+\1
+	;mov y,#$40
+	
+	mov a,#VOLL+($10*\1)
+	movw REG_ADD,YA
+	
+	mov a,#VOLR+($10*\1)
+	movw REG_ADD,YA
+	
+	
+	mov a,!pitch+\1
+	mov !tpitch,a
+	call !plsr
+	
+	mov y,!tmp+1
+	mov a,#RH+($10*\1)
+	movw REG_ADD,YA
+	
+	
+	
+	mov y,!tmp
+	mov a,#RL+($10*\1)
+	movw REG_ADD,YA
+.ENDM
+
+plsr:
+
+	mov a,!tpitch
+	and a,#$0F
+	mov !tmp,a
+	
+	mov a,!tpitch
+	and a,#$F0
+	lsr a
+	lsr a
+	lsr a
+	lsr a
+	
+	mov !tmp+1,a
+	;0 $10
+	cmp a,#$00
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;1 $20
+	cmp a,#$01
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		clrc
+		adc a,#1
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;2 $40
+	cmp a,#$02
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		asl a
+		clrc
+		adc a,#$02
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;3 $80
+	cmp a,#$03
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$04
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;4 $100
+	mov a,!tmp+1
+	cmp a,#$04
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$08
+		mov !tmp,a
+		
+		mov a,#$01
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;5 $200
+	mov a,!tmp+1
+	cmp a,#$05
+	bne +
+		mov a,!tmp
+		clrc
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$10
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$08
+		lsr a
+		lsr a
+		lsr a
+		clrc
+		adc a,#$02
+		mov !tmp+1,a
+		
+		
+		
+		ret
+	+:
+	
+	;6 $400
+	mov a,!tmp+1
+	cmp a,#$06
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$20
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0C
+		lsr a
+		lsr a
+		clrc
+		adc a,#$04
+		mov !tmp+1,a
+		
+		
+		ret
+	+:
+	
+	;7 $800
+	mov a,!tmp+1
+	cmp a,#$07
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$40
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0E
+		lsr a
+		clrc
+		adc a,#$08
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;8 $1000
+	mov a,!tmp+1
+	cmp a,#$08
+	bne +
+		mov a,#$80
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0F
+		clrc
+		adc a,#$10
+		mov !tmp+1,a
+		ret
+	+:
+	;9 $2000
+	mov a,!tmp+1
+	cmp a,#$09
+	bne +
+		mov a,#0
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0F
+		asl a
+		clrc
+		adc a,#$21
+		mov !tmp+1,a
+		ret
+	+:
+	
+	ret
+/*
+plsr2:
+
+	mov a,!tpitch
+	and a,#$0F
+	mov !tmp,a
+	
+	mov a,!tpitch
+	and a,#$F0
+	lsr a
+	lsr a
+	lsr a
+	lsr a
+	
+	mov !tmp+1,a
+	
+
+		
+	;0 $10
+	mov a,!tmp+1
+	cmp a,#$00
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;1 $20
+	cmp a,#$01
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;2 $40
+	cmp a,#$02
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		asl a
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;3 $80
+	cmp a,#$03
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		asl a
+		asl a
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;4 $100
+	mov a,!tmp+1
+	cmp a,#$04
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		mov !tmp,a
+		
+		mov a,#$01
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;5 $200
+	mov a,!tmp+1
+	cmp a,#$05
+	bne +
+		mov a,!tmp
+		clrc
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$08
+		lsr a
+		lsr a
+		lsr a
+		clrc
+		adc a,#$02
+		mov !tmp+1,a
+		
+		
+		
+		ret
+	+:
+	
+	;6 $400
+	mov a,!tmp+1
+	cmp a,#$06
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0C
+		lsr a
+		lsr a
+		clrc
+		adc a,#$04
+		mov !tmp+1,a
+		
+		
+		ret
+	+:
+	
+	;7 $800
+	mov a,!tmp+1
+	cmp a,#$07
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0E
+		lsr a
+		clrc
+		adc a,#$08
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;8 $1000
+	mov a,!tmp+1
+	cmp a,#$08
+	bne +
+		mov a,#0
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0F
+		clrc
+		adc a,#$10
+		mov !tmp+1,a
+		ret
+	+:
+	;9 $2000
+	mov a,!tmp+1
+	cmp a,#$09
+	bne +
+		mov a,#0
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0F
+		asl a
+		clrc
+		adc a,#$20
+		mov !tmp+1,a
+		ret
+	+:
+	
+	ret
+*/
+
+playsong:
+
+
+	
+	mov a,!toffset
+	cmp a,#0
+	bne +
+		
+		jmp !playsongc0
+	+:
+	cmp a,#1
+	bne +
+		jmp !playsongc1
+	+:
+	cmp a,#2
+	bne +
+		jmp !playsongc2
+	+:
+	cmp a,#3
+	bne +
+		jmp !playsongc3
+	+:
+	cmp a,#4
+	bne +
+		jmp !playsongc4
+	+:
+	cmp a,#5
+	bne +
+		jmp !playsongc5
+	+:
+	cmp a,#6
+	bne +
+		jmp !playsongc6
+	+:
+	cmp a,#7
+	bne +
+		jmp !playsongc7
+	+:
+
+	ret
+	
+playsongc0:
+	WDSP KON,$01
+	MIDI_play 0
+	jmp !playsongn
+playsongc1:
+	WDSP KON,$02
+	MIDI_play 1
+	jmp !playsongn	
+playsongc2:
+	WDSP KON,$04
+	MIDI_play 2
+	jmp !playsongn
+playsongc3:
+	WDSP KON,$08
+	MIDI_play 3
+	jmp !playsongn
+playsongc4:
+	WDSP KON,$10
+	MIDI_play 4
+	jmp !playsongn
+playsongc5:
+	WDSP KON,$20
+	MIDI_play 5
+	jmp !playsongn
+playsongc6:
+	WDSP KON,$40
+	MIDI_play 6
+	jmp !playsongn
+playsongc7:
+	WDSP KON,$80
+	MIDI_play 7
+	jmp !playsongn
+	
+playsongn:
+	call !upload_offset2
+
+	ret
+	

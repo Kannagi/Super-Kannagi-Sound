@@ -1,0 +1,195 @@
+
+SPC_Init_Info:
+
+	
+	mov y,!SMINFO
+	mov a,#FLG
+	movw REG_ADD,YA
+	
+	mov a,!SMINFO+1
+	mov !kon,a
+	
+	mov y,!SMINFO+2
+	mov a,#PMON
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+3
+	mov a,#NON
+	movw REG_ADD,YA
+	
+	;ECHO
+	mov y,!SMINFO+4
+	mov a,#ESA
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+5
+	mov a,#EDL
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+6
+	mov a,#EON
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+7
+	mov a,#EFB
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+8
+	mov a,#EVOLL
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+9
+	mov a,#EVOLR
+	movw REG_ADD,YA
+	
+	
+	mov y,!SMINFO+10
+	mov a,#C0
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+11
+	mov a,#C1
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+12
+	mov a,#C2
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+13
+	mov a,#C3
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+14
+	mov a,#C4
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+15
+	mov a,#C5
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+16
+	mov a,#C6
+	movw REG_ADD,YA
+	
+	mov y,!SMINFO+17
+	mov a,#C7
+	movw REG_ADD,YA
+	
+	;tick
+	mov a,!SMINFO+18
+	mov !emusic,a
+	
+	mov a,!SMINFO+19
+	mov !emusic+1,a
+	
+	;volume
+	mov y,!mvolume
+	mov a,#MVOLL
+	movw REG_ADD,YA
+	
+	mov y,!mvolume+1
+	mov a,#MVOLR
+	movw REG_ADD,YA
+	
+	ret
+	
+SPC_Init_Voice:
+
+	mov y,#0
+	
+	/*
+	mov y,#0
+	mov a,!tmp
+	clrc
+	adc a,#10
+	mov a,!tmp+1
+	-:
+		movw REG_ADD,YA
+	
+		inc a
+		cmp a,!tmp+1
+	bne -
+	*/
+	mov a,#VOLL
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	mov a,#VOLR
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	
+	mov a,#RL
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	mov a,#RH
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	
+	mov a,#SRCN
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+
+	
+	mov y,#$FF
+	mov a,#ADSR1
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	mov y,#$E0
+	mov a,#ADSR2
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	mov y,#0
+	mov a,#GAIN
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	
+
+	ret
+	
+SPC_Init_Track:
+
+	mov y,!arg
+	mov a,#SRCN
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+
+	
+	mov y,!arg+1
+	mov a,#ADSR1
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	mov y,!arg+2
+	mov a,#ADSR2
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	mov y,!arg+3
+	mov a,#GAIN
+	clrc
+	adc a,!tmp
+	movw REG_ADD,YA
+	
+	
+
+	ret
+	

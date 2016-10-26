@@ -1,0 +1,290 @@
+
+SKS_ON:
+
+	
+	-:
+		mov a,PORT_1
+		cmp a,#LKS_SPC_CONTROL
+		bne ++
+		
+			
+			mov a,PORT_2
+			cmp a,#LKS_SPC_ON
+			beq +
+			
+		++:
+			
+	bra -
+	+:
+	
+	mov a,PORT_0
+	mov PORT_0,a
+	
+	mov a,#$30
+	mov CONTROL,a
+	
+	ret
+	
+SKS_IO:
+
+	
+	
+	mov a,PORT_1
+	cmp a,#LKS_SPC_VOLUME
+	bne +
+	
+		mov a,PORT_2
+		mov !mvolume,a
+		
+		mov a,PORT_3
+		mov !mvolume+1,a
+		
+		
+		
+		call !SKS_IO_END
+		ret
+	+:
+	
+	cmp a,#LKS_SPC_RVOLUME
+	bne +
+	
+		
+		mov a,!mvolume
+		mov PORT_2,a
+		
+		mov a,!mvolume+1
+		mov PORT_3,a
+		
+		
+		
+		call !SKS_IO_END
+		ret
+	+:
+	
+	cmp a,#LKS_SPC_BRR_VOLUME
+	bne +
+	
+	
+		
+		mov a,PORT_2
+		mov !bvolume,a
+		
+		mov a,PORT_3
+		mov !bvolume+1,a
+
+		call !SKS_IO_END
+			
+			
+		ret
+	+:
+	
+	cmp a,#LKS_SPC_BRR_PITCH
+	bne +
+	
+	
+		
+		mov a,PORT_2
+		mov !bpitch,a
+		
+		mov a,PORT_3
+		mov !bpitch+1,a
+
+		call !SKS_IO_END
+			
+			
+		ret
+	+:
+
+	cmp a,#LKS_SPC_BRR_PLAY
+	bne +
+	
+		;SAMPLE
+		mov y,PORT_2		
+		mov a,#SRCN
+		clrc
+		adc a,PORT_3
+		movw REG_ADD,YA
+		
+		;VOLUME
+		mov y,!bvolume		
+		mov a,#VOLL
+		clrc
+		adc a,PORT_3
+		movw REG_ADD,YA
+		
+		mov y,!bvolume+1	
+		mov a,#VOLR
+		clrc
+		adc a,PORT_3
+		movw REG_ADD,YA
+		
+		;PITCH
+		mov y,!bpitch	
+		mov a,#RL
+		clrc
+		adc a,PORT_3
+		movw REG_ADD,YA
+		
+		mov y,!bpitch+1	
+		mov a,#RH
+		clrc
+		adc a,PORT_3
+		movw REG_ADD,YA
+
+		call !SKS_IO_END
+			
+			
+		ret
+	+:
+	
+	cmp a,#LKS_SPC_PLAY
+	bne +
+	
+	
+		
+		mov a,PORT_2
+		mov !play,a
+
+		call !SKS_IO_END
+			
+			
+		ret
+	+:
+
+	
+	
+	cmp a,#LKS_SPC_ADDR
+	bne +
+	
+		mov a,PORT_2
+		mov !ADDRL,a
+
+		mov a,PORT_3
+		mov !ADDRH,a
+		
+		call !SKS_IO_END
+		
+		ret
+			
+	+:
+
+	cmp a,#LKS_SPC_DATA
+	bne +
+	
+		mov a,!ADDRL
+		mov !ZPD,a
+		mov a,!ADDRH
+		mov !ZPD+1,a
+		
+		mov y,#0
+		mov a,PORT_2
+		mov [ZPD]+y,a
+		
+		
+		mov a,!ADDRL
+		clrc
+		adc a,#1
+		mov !ADDRL,a
+		
+		mov a,!ADDRH
+		adc a,#0
+		mov !ADDRH,a
+		
+		call !SKS_IO_END
+		
+		ret
+	
+	+:
+	
+	cmp a,#LKS_SPC_DATA2
+	bne +
+	
+		mov a,!ADDRL
+		mov !ZPD,a
+		mov a,!ADDRH
+		mov !ZPD+1,a
+		
+		mov y,#0
+		mov a,PORT_2
+		mov [ZPD]+y,a
+		
+		mov y,#1
+		mov a,PORT_3
+		mov [ZPD]+y,a
+
+		mov a,!ADDRL
+		clrc
+		adc a,#2
+		mov !ADDRL,a
+		
+		mov a,!ADDRH
+		adc a,#0
+		mov !ADDRH,a
+		
+		
+		call !SKS_IO_END
+		
+		ret
+	
+	+:
+	
+	cmp a,#LKS_SPC_RDATA
+	bne +
+	
+		mov a,!ADDRL
+		mov !ZPD,a
+		mov a,!ADDRH
+		mov !ZPD+1,a
+		
+		mov y,#0
+		mov a,[ZPD]+y
+		mov PORT_2,a
+		
+		mov y,#1
+		mov a,[ZPD]+y
+		mov PORT_3,a
+		
+		
+		mov a,!ADDRL
+		clrc
+		adc a,#1
+		mov !ADDRL,a
+		
+		mov a,!ADDRH
+		adc a,#0
+		mov !ADDRH,a
+		
+		
+		call !SKS_IO_END
+		
+		ret
+	
+	+:
+	
+	
+	cmp a,#LKS_SPC_TICKS
+	bne +
+	
+		mov a,!ticks
+		mov PORT_2,a
+		
+		mov a,!ticks+1
+		mov PORT_3,a
+		
+		call !SKS_IO_END
+		
+		ret
+			
+	+:
+	
+	ret
+	
+SKS_IO_END:
+
+	mov a,PORT_0
+	mov PORT_0,a
+		
+	mov CONTROL,#$31
+		
+	ret
+	

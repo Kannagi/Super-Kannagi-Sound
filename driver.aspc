@@ -1,0 +1,378 @@
+
+
+
+.include "SPC/header.aspc"
+.include "SPC/spc.aspc"
+
+.include "SPC/spc.asm"
+.DEFINE ZP $0A
+.DEFINE ZPD $1A
+
+.DEFINE track0 $1B00 ;size $600
+.DEFINE track1 $2100 ;size $600
+.DEFINE track2 $2700 ;size $500
+.DEFINE track3 $2C00 ;size $500
+.DEFINE track4 $3100 ;size $400
+.DEFINE track5 $3500 ;size $400
+.DEFINE track6 $3900 ;size $300
+.DEFINE track7 $3C00 ;size $300
+
+.DEFINE SMHEADER0 $3F00
+.DEFINE SMHEADER1 $3F10
+.DEFINE SMHEADER2 $3F20
+.DEFINE SMHEADER3 $3F30
+.DEFINE SMHEADER4 $3F40
+.DEFINE SMHEADER5 $3F50
+.DEFINE SMHEADER6 $3F60
+.DEFINE SMHEADER7 $3F70
+
+.DEFINE SMINFO	  $3F80
+
+.DEFINE RAM 	$FE00
+.DEFINE ticks 	RAM+$0000
+.DEFINE tmp 	RAM+$0002
+.DEFINE toffset RAM+$0004
+.DEFINE tpitch 	RAM+$0006
+.DEFINE arg 	RAM+$0008
+
+.DEFINE lecture RAM+$0010
+.DEFINE offset 	RAM+$0020
+.DEFINE mode 	RAM+$0030
+.DEFINE poffset RAM+$0038
+.DEFINE pitch 	RAM+$0040
+.DEFINE volume 	RAM+$0048
+.DEFINE volt 	RAM+$0050
+
+.DEFINE mvolume RAM+$0100
+.DEFINE kon 	RAM+$0102
+.DEFINE play 	RAM+$0103
+.DEFINE ADDRL 	RAM+$0104
+.DEFINE ADDRH 	RAM+$0105
+.DEFINE emusic 	RAM+$0106
+.DEFINE bvolume RAM+$0108
+.DEFINE bpitch  RAM+$010A
+.DEFINE bkon	RAM+$010C
+.DEFINE debug 	RAM+$0110
+	
+.MACRO SPC_INIT_VOICE
+	
+	mov a,#($10*\1)
+	mov !tmp,a
+	call !SPC_Init_Voice
+	
+	
+.ENDM
+
+
+.MACRO SPC_INIT_HEADER
+	
+	mov a,#($10*\1)
+	mov !tmp,a
+	
+	mov a,!SMHEADER0+($10*\1)
+	mov !arg,a
+	
+	mov a,!SMHEADER0+($10*\1)+1
+	mov !arg+1,a
+	
+	mov a,!SMHEADER0+($10*\1)+2
+	mov !arg+2,a
+	
+	mov a,!SMHEADER0+($10*\1)+3
+	mov !arg+3,a
+	
+	call !SPC_Init_Track
+	
+	
+.ENDM
+
+
+
+.MACRO SPCWaitMS 
+
+	mov TIMER_0,  #\1 ; $8 = 1 ms
+    mov CONTROL, #$01 ; TIMER0 Start
+
+	-:
+		
+		mov a,COUNTER_0
+	beq -
+.ENDM
+
+.MACRO SPCRAMClear
+	mov a,#$00 
+	
+	mov y,#$FF
+	-:
+		
+		mov !\1+Y,a
+	dbnz y,-
+	mov !\1,a
+
+.ENDM
+
+
+Main:
+
+	bra +
+	.db "Super Kannagi Sound 0.8"
+	+:
+	
+
+	WDSP FLG,$00
+	WDSP KON,$00
+	WDSP PMON,$00
+	WDSP NON,$00	
+	WDSP KOF,$00
+	
+
+		
+	
+	WDSP ESA,($8000 >> 8)   ; Echo Source Address
+	WDSP EDL,$00     ; Echo Delay
+	WDSP EON,$00  ; Echo On Flags
+	WDSP EFB,$00    ; Echo Feedback
+	WDSP C0,$00	 ; Echo C Filter Coefficient 0
+	WDSP C1,$00    ; Echo C Filter Coefficient 1
+	WDSP C2,$00   ; Echo C Filter Coefficient 2
+	WDSP C3,$00    ; Echo C Filter Coefficient 3
+	WDSP C4,$00    ; Echo C Filter Coefficient 4
+	WDSP C5,$00   ; Echo C Filter Coefficient 5
+	WDSP C6,$00   ; Echo C Filter Coefficient 6
+	WDSP C7,$00    ; Echo C Filter Coefficient 7
+	WDSP EVOLL,$00  ; Echo Volume Left
+	WDSP EVOLR,$00  ; Echo Volume Right
+	
+	WDSP DIR,(sampleDIR >> 8)
+	
+	SPC_INIT_VOICE 0
+	SPC_INIT_VOICE 1
+	SPC_INIT_VOICE 2
+	SPC_INIT_VOICE 3
+	SPC_INIT_VOICE 4
+	SPC_INIT_VOICE 5
+	SPC_INIT_VOICE 6
+	SPC_INIT_VOICE 7
+	
+	
+	
+		
+	
+	
+	
+	
+	call !SKS_ON
+
+	;SNES MIDI
+	mov a,#LKS_SPC_OFF
+	mov !play,a
+	
+	
+	
+	
+Begin:
+	
+	
+	
+	call !Loop_Music
+	
+	
+	;call !SPC_Init
+	
+	
+	
+	Loop:
+		
+		mov TIMER_0,#$20 ; $8 = 1 ms
+		mov CONTROL,#$01 ; TIMER0 Start
+		
+		
+
+		mov a,!play
+		cmp a,#LKS_SPC_ON
+		bne +
+			call !MIDI_Music
+		
+			
+		+:
+		mov a,!play
+		cmp a,#LKS_SPC_LOOP
+		bne +
+		
+			mov a,#LKS_SPC_ON
+			mov !play,a
+			
+			call !Loop_Music
+		+:
+		
+		
+		;Ticks SNES MIDI (4ms)
+		-:
+			call !SKS_IO
+			mov a,COUNTER_0
+		beq -
+		;SPCWaitMS $20
+	jmp !Loop
+	
+	
+.MACRO SPC_MIDI_TRACK
+	
+	mov a,!kon
+	and a,#$01<<\1
+	cmp a,#0
+	beq ++
+	
+	mov a,#\1
+	mov !toffset,a
+	mov a,!mode+\1
+	cmp a,#0
+	bne +
+		
+		call !playsong
+		
+		bra ++
+	+:
+		call !playsongend
+	
+	
+	++:
+	
+	
+.ENDM
+	
+MIDI_Music:
+
+	SPC_INIT_HEADER 0
+	SPC_INIT_HEADER 1
+	SPC_INIT_HEADER 2
+	SPC_INIT_HEADER 3
+	SPC_INIT_HEADER 4
+	SPC_INIT_HEADER 5
+	SPC_INIT_HEADER 6
+	SPC_INIT_HEADER 7
+	
+	call !SPC_Init_Info
+	
+	
+
+		
+	SPC_MIDI_TRACK 0
+	SPC_MIDI_TRACK 1
+	SPC_MIDI_TRACK 2
+	SPC_MIDI_TRACK 3
+	SPC_MIDI_TRACK 4
+	SPC_MIDI_TRACK 5
+	SPC_MIDI_TRACK 6
+	SPC_MIDI_TRACK 7
+	
+	mov a,!ticks
+	clrc
+	adc a,#1
+	mov !ticks,a
+	mov a,!ticks+1
+	adc a,#0
+	mov !ticks+1,a
+	
+	;if end tick Loop_Music
+	mov a,!ticks+1
+	cmp a,#$FF
+	bne +
+		mov a,!ticks
+		cmp a,#$FF
+		bne +
+		call !Loop_Music
+	+:
+
+	;end music
+	mov a,!ticks+1
+	cmp a,!emusic+1
+	bne +
+	
+		mov a,!ticks
+		cmp a,!emusic
+		bne +
+		call !Loop_Music
+	+:
+	
+	
+	
+	ret
+	
+	
+Loop_Music:
+
+	
+	
+	
+	mov a,#0
+	mov !ticks,a
+	mov !ticks+1,a
+	
+	
+	SPCRAMClear RAM
+	
+	
+	;--------
+	
+	
+	mov a,#0
+	mov !toffset,a
+	call !upload_offset
+	
+	mov a,#1
+	mov !toffset,a
+	call !upload_offset
+	
+	mov a,#2
+	mov !toffset,a
+	call !upload_offset
+	
+	mov a,#3
+	mov !toffset,a
+	call !upload_offset
+	
+	mov a,#4
+	mov !toffset,a
+	call !upload_offset
+	
+	mov a,#5
+	mov !toffset,a
+	call !upload_offset
+	
+	mov a,#6
+	mov !toffset,a
+	call !upload_offset
+	
+	mov a,#7
+	mov !toffset,a
+	call !upload_offset
+	
+	ret
+	
+
+	
+	.include "SPC/init.aspc"
+	.include "SPC/sksio.aspc"
+	.include "SPC/playsong.aspc"
+	.include "SPC/upload.aspc"
+
+
+
+.org $1500
+sampleDIR:
+.include "SPC/dir.aspc"
+
+
+
+
+/*
+PRG : 0x0200 -0x16FF
+SampleDIR : 0x1700 - 0x1AFF
+track : 0x1B00 - 0x3FFF
+Sample : 0x4000 - 0xFDFF
+RAM : 0xFE00 - 0xFFBF
+
+Sample
+0x100: 0xBD
+
+*/

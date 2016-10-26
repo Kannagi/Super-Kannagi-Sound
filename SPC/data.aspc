@@ -1,0 +1,108 @@
+
+
+BRRTest:
+.db $C3
+
+.db $60
+.db $00
+.db $00
+.db $00
+
+.db $00
+.db $00
+.db $00
+.db $00
+
+BRRbas:
+.db $C3
+
+.db $00
+.db $00
+.db $00
+.db $AA
+
+.db $99
+.db $99
+.db $AA
+.db $00
+
+BRRsin:
+.db $C3
+
+.db $03
+.db $56
+.db $75
+.db $3E
+
+.db $B9
+.db $98
+.db $9B
+.db $E0
+
+BRRsin2:
+.db $73
+
+.db $03
+.db $56
+.db $75
+.db $3E
+
+.db $B9
+.db $98
+.db $9B
+.db $E0
+
+BRRcarre:
+.db $C3
+
+.db $67
+.db $77
+.db $77
+.db $76
+
+.db $98
+.db $88
+.db $88
+.db $89
+
+BRRlmms:
+.db $C3
+
+.db $00
+.db $00
+.db $77
+.db $77
+
+.db $00
+.db $00
+.db $88
+.db $88
+
+BRRtriangle:
+.db $C3
+
+.db $02
+.db $46
+.db $76
+.db $42
+
+.db $0E
+.db $CA
+.db $8A
+.db $CE
+
+
+
+BRRSample:
+.incbin "SPC/test.brr"
+;.org $500
+;.incbin "out.brr"
+BRRSample2:
+.incbin "SPC/02.brr"
+
+BRRSample3:
+.incbin "SPC/03.brr"
+
+BRRSample4:
+.incbin "SPC/04.brr"
+
