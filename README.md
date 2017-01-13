@@ -1,9 +1,9 @@
-# Super Kannagi Sound 0.7
+# Super Kannagi Sound 0.9
 
 
 ## Notes
 The source code of my sound driver.
-In SNESMIDI folder you find a converter MIDI/SNES TRACK.
+
 
 
 ### Requirements
@@ -14,4 +14,4 @@ Building the demo from the source code requires:
 ### How to Build
 - bash spc.sh
 - bash snes.sh
-- gcc main.c -o snesmidi
+
