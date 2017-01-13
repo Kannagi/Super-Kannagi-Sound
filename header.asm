@@ -8,7 +8,7 @@
 .ROMBANKSIZE $8000
 .ROMBANKS 16
 
-; R/BANK ko
+; R/BANK kb
 ; 9/16  512
 ; A/32  1024
 ; B/64  2048
@@ -17,13 +17,13 @@
 
 .SNESHEADER
 	ID    "SNES"
-	NAME  "The World of Demon   "
+	NAME  "SKS Driver           "
 	;     "123456789012345678901"
 	LOROM
 	SLOWROM
-	CARTRIDGETYPE $02
+	CARTRIDGETYPE $00
 	ROMSIZE $09 ;size rom 09-0c
-	SRAMSIZE $03
+	SRAMSIZE $00
 	COUNTRY $01 ;0 = japan , 1 = US , 2 = Europe
 	LICENSEECODE $01
 	VERSION 00
