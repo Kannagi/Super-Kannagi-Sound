@@ -110,7 +110,8 @@ Main:
 	
 	mov a,#$30
 	mov CONTROL,a
-	
+
+	SPCRAMClear RAM,$FF
 	SPCRAMClear RAM+$100,$30
 	
 	Loop:
