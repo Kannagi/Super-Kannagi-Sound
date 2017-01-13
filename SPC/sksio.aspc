@@ -1,29 +1,5 @@
 
-SKS_ON:
 
-	
-	-:
-		mov a,PORT_1
-		cmp a,#LKS_SPC_CONTROL
-		bne ++
-		
-			
-			mov a,PORT_2
-			cmp a,#LKS_SPC_ON
-			beq +
-			
-		++:
-			
-	bra -
-	+:
-	
-	mov a,PORT_0
-	mov PORT_0,a
-	
-	mov a,#$30
-	mov CONTROL,a
-	
-	ret
 	
 SKS_IO:
 
@@ -61,6 +37,23 @@ SKS_IO:
 		ret
 	+:
 	
+	cmp a,#LKS_SPC_BRR_INIT
+	bne +
+	
+	
+		
+		mov a,PORT_2
+		mov !bvolume,a
+		mov !bvolume+1,a
+		
+		
+
+		call !SKS_IO_END
+			
+			
+		ret
+	+:
+	
 	cmp a,#LKS_SPC_BRR_VOLUME
 	bne +
 	
@@ -78,58 +71,91 @@ SKS_IO:
 		ret
 	+:
 	
-	cmp a,#LKS_SPC_BRR_PITCH
-	bne +
 	
-	
-		
-		mov a,PORT_2
-		mov !bpitch,a
-		
-		mov a,PORT_3
-		mov !bpitch+1,a
-
-		call !SKS_IO_END
-			
-			
-		ret
-	+:
 
 	cmp a,#LKS_SPC_BRR_PLAY
 	bne +
-	
-		;SAMPLE
-		mov y,PORT_2		
-		mov a,#SRCN
-		clrc
-		adc a,PORT_3
+
+		
+		mov a,PORT_2
+		mov !tpitch,a
+		call !convert_pitch
+
+
+		mov a,PORT_3
+		mov !arg+0,a
+
+
+		mov a,#$FF
+		mov !arg+1,a
+
+		mov a,#$E0
+		mov !arg+2,a
+
+		mov a,#$7F
+		mov !arg+3,a
+
+
+		mov a,!bvolume
+		mov !arg+4,a
+		mov a,!bvolume+1
+		mov !arg+5,a
+		
+		mov a,#$00
+		mov !tmp2+1,a
+		
+		mov a,#$08
+		mov !tmp2+2,a
+		
+		mov a,#$08
+		mov !tmp2+2,a
+
+		mov a,#$80
+		call !SKS_IO_KON
+		
+		mov a,#$40
+		call !SKS_IO_KON
+		
+		mov a,#$20
+		call !SKS_IO_KON
+		
+		mov a,#$10
+		call !SKS_IO_KON
+		
+		mov a,#$08
+		call !SKS_IO_KON
+		
+		mov a,#$04
+		call !SKS_IO_KON
+		
+		mov a,#$02
+		call !SKS_IO_KON
+		
+		mov a,#$01
+		call !SKS_IO_KON
+		
+		
+		
+
+
+		mov a,!tmp2+3
+		mov y,#$10
+		mul ya
+		mov x,a
+		
+
+		
+
+		call !set_voice
+		
+		
+		mov a,#KON
+		mov y,!bkon
 		movw REG_ADD,YA
 		
-		;VOLUME
-		mov y,!bvolume		
-		mov a,#VOLL
-		clrc
-		adc a,PORT_3
-		movw REG_ADD,YA
 		
-		mov y,!bvolume+1	
-		mov a,#VOLR
-		clrc
-		adc a,PORT_3
-		movw REG_ADD,YA
 		
-		;PITCH
-		mov y,!bpitch	
-		mov a,#RL
-		clrc
-		adc a,PORT_3
-		movw REG_ADD,YA
 		
-		mov y,!bpitch+1	
-		mov a,#RH
-		clrc
-		adc a,PORT_3
-		movw REG_ADD,YA
 
 		call !SKS_IO_END
 			
@@ -140,7 +166,7 @@ SKS_IO:
 	cmp a,#LKS_SPC_PLAY
 	bne +
 	
-	
+		
 		
 		mov a,PORT_2
 		mov !play,a
@@ -172,9 +198,9 @@ SKS_IO:
 	bne +
 	
 		mov a,!ADDRL
-		mov !ZPD,a
+		mov ZPD,a
 		mov a,!ADDRH
-		mov !ZPD+1,a
+		mov ZPD+1,a
 		
 		mov y,#0
 		mov a,PORT_2
@@ -200,15 +226,15 @@ SKS_IO:
 	bne +
 	
 		mov a,!ADDRL
-		mov !ZPD,a
+		mov ZPD,a
 		mov a,!ADDRH
-		mov !ZPD+1,a
+		mov ZPD+1,a
 		
 		mov y,#0
 		mov a,PORT_2
 		mov [ZPD]+y,a
 		
-		mov y,#1
+		inc y
 		mov a,PORT_3
 		mov [ZPD]+y,a
 
@@ -232,15 +258,15 @@ SKS_IO:
 	bne +
 	
 		mov a,!ADDRL
-		mov !ZPD,a
+		mov ZPD,a
 		mov a,!ADDRH
-		mov !ZPD+1,a
+		mov ZPD+1,a
 		
 		mov y,#0
 		mov a,[ZPD]+y
 		mov PORT_2,a
 		
-		mov y,#1
+		inc y
 		mov a,[ZPD]+y
 		mov PORT_3,a
 		
@@ -257,34 +283,73 @@ SKS_IO:
 		
 		call !SKS_IO_END
 		
+		
+		
 		ret
 	
 	+:
 	
 	
+	
 	cmp a,#LKS_SPC_TICKS
 	bne +
-	
 		mov a,!ticks
 		mov PORT_2,a
 		
 		mov a,!ticks+1
 		mov PORT_3,a
 		
+
 		call !SKS_IO_END
 		
 		ret
 			
 	+:
 	
+	
 	ret
 	
 SKS_IO_END:
 
 	mov a,PORT_0
+	inc a
 	mov PORT_0,a
-		
+	
+	
+	
 	mov CONTROL,#$31
+	
+	
+		
+	ret
+	
+SKS_IO_KON:
+
+	dec !tmp2+2
+	mov !tmp2,a
+	
+	mov a,!tmp2+1
+	cmp a,#0
+	beq +
+		ret
+	+:
+	
+	
+	
+	mov a,!bkon
+	and a,!tmp2
+	cmp a,!tmp2
+	beq +
+		mov a,!bkon
+		or a,!tmp2
+		mov !bkon,a
+		
+		mov !tmp2+1,a
+		
+		mov a,!tmp2+2
+		mov !tmp2+3,a
+	+:
+	
 		
 	ret
 	

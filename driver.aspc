@@ -5,28 +5,16 @@
 .include "SPC/spc.aspc"
 
 .include "SPC/spc.asm"
-.DEFINE ZP $0A
-.DEFINE ZPD $1A
+.DEFINE ZP $80
+.DEFINE ZPD $82
 
-.DEFINE track0 $1B00 ;size $600
-.DEFINE track1 $2100 ;size $600
-.DEFINE track2 $2700 ;size $500
-.DEFINE track3 $2C00 ;size $500
-.DEFINE track4 $3100 ;size $400
-.DEFINE track5 $3500 ;size $400
-.DEFINE track6 $3900 ;size $300
-.DEFINE track7 $3C00 ;size $300
 
-.DEFINE SMHEADER0 $3F00
-.DEFINE SMHEADER1 $3F10
-.DEFINE SMHEADER2 $3F20
-.DEFINE SMHEADER3 $3F30
-.DEFINE SMHEADER4 $3F40
-.DEFINE SMHEADER5 $3F50
-.DEFINE SMHEADER6 $3F60
-.DEFINE SMHEADER7 $3F70
 
-.DEFINE SMINFO	  $3F80
+.DEFINE SKSHEADER $1500
+.DEFINE SKSTRACK $1518
+.DEFINE SKSINDEX $1520
+
+
 
 .DEFINE RAM 	$FE00
 .DEFINE ticks 	RAM+$0000
@@ -41,7 +29,19 @@
 .DEFINE poffset RAM+$0038
 .DEFINE pitch 	RAM+$0040
 .DEFINE volume 	RAM+$0048
-.DEFINE volt 	RAM+$0050
+.DEFINE eon 	RAM+$0050
+.DEFINE pmon 	RAM+$0051
+.DEFINE non 	RAM+$0052
+.DEFINE kof 	RAM+$0053
+.DEFINE aoffset RAM+$0060
+.DEFINE roffset RAM+$0070
+.DEFINE roffset2 RAM+$0080
+.DEFINE first	RAM+$0090
+
+.DEFINE srcn 	RAM+$00A0
+.DEFINE gain 	RAM+$00A8
+.DEFINE adsr1 	RAM+$00B0
+.DEFINE adsr2 	RAM+$00B8
 
 .DEFINE mvolume RAM+$0100
 .DEFINE kon 	RAM+$0102
@@ -53,6 +53,8 @@
 .DEFINE bpitch  RAM+$010A
 .DEFINE bkon	RAM+$010C
 .DEFINE debug 	RAM+$0110
+.DEFINE tmp2	RAM+$0112
+.DEFINE init	RAM+$0116
 	
 .MACRO SPC_INIT_VOICE
 	
@@ -62,31 +64,6 @@
 	
 	
 .ENDM
-
-
-.MACRO SPC_INIT_HEADER
-	
-	mov a,#($10*\1)
-	mov !tmp,a
-	
-	mov a,!SMHEADER0+($10*\1)
-	mov !arg,a
-	
-	mov a,!SMHEADER0+($10*\1)+1
-	mov !arg+1,a
-	
-	mov a,!SMHEADER0+($10*\1)+2
-	mov !arg+2,a
-	
-	mov a,!SMHEADER0+($10*\1)+3
-	mov !arg+3,a
-	
-	call !SPC_Init_Track
-	
-	
-.ENDM
-
-
 
 .MACRO SPCWaitMS 
 
@@ -102,7 +79,7 @@
 .MACRO SPCRAMClear
 	mov a,#$00 
 	
-	mov y,#$FF
+	mov y,#\2
 	-:
 		
 		mov !\1+Y,a
@@ -113,86 +90,51 @@
 
 
 Main:
-
 	bra +
-	.db "Super Kannagi Sound 0.8"
+	.db "Super Kannagi Sound 0.9"
 	+:
 	
-
-	WDSP FLG,$00
-	WDSP KON,$00
-	WDSP PMON,$00
-	WDSP NON,$00	
-	WDSP KOF,$00
+	call !SPC_Init
 	
 
-		
-	
-	WDSP ESA,($8000 >> 8)   ; Echo Source Address
-	WDSP EDL,$00     ; Echo Delay
-	WDSP EON,$00  ; Echo On Flags
-	WDSP EFB,$00    ; Echo Feedback
-	WDSP C0,$00	 ; Echo C Filter Coefficient 0
-	WDSP C1,$00    ; Echo C Filter Coefficient 1
-	WDSP C2,$00   ; Echo C Filter Coefficient 2
-	WDSP C3,$00    ; Echo C Filter Coefficient 3
-	WDSP C4,$00    ; Echo C Filter Coefficient 4
-	WDSP C5,$00   ; Echo C Filter Coefficient 5
-	WDSP C6,$00   ; Echo C Filter Coefficient 6
-	WDSP C7,$00    ; Echo C Filter Coefficient 7
-	WDSP EVOLL,$00  ; Echo Volume Left
-	WDSP EVOLR,$00  ; Echo Volume Right
-	
+
 	WDSP DIR,(sampleDIR >> 8)
-	
-	SPC_INIT_VOICE 0
-	SPC_INIT_VOICE 1
-	SPC_INIT_VOICE 2
-	SPC_INIT_VOICE 3
-	SPC_INIT_VOICE 4
-	SPC_INIT_VOICE 5
-	SPC_INIT_VOICE 6
-	SPC_INIT_VOICE 7
-	
-	
-	
-		
-	
-	
-	
-	
-	call !SKS_ON
 
-	;SNES MIDI
-	mov a,#LKS_SPC_OFF
-	mov !play,a
+	;INIT
+	mov a,#0
+	mov PORT_0,a
+	mov PORT_1,a
+	mov PORT_2,a
+	mov PORT_3,a
 	
 	
+	mov a,#$30
+	mov CONTROL,a
 	
-	
-Begin:
-	
-	
-	
-	call !Loop_Music
-	
-	
-	;call !SPC_Init
-	
-	
+	SPCRAMClear RAM+$100,$30
 	
 	Loop:
 		
 		mov TIMER_0,#$20 ; $8 = 1 ms
 		mov CONTROL,#$01 ; TIMER0 Start
 		
-		
+		mov a,!play
+		cmp a,#LKS_SPC_OFF
+		bne +
+
+			;mov a,#KOF
+			;mov REG_ADD,a
+			
+			;mov a,!bkon
+			;eor a,#$FF
+			;mov REG_DATA,a
+		+:
 
 		mov a,!play
 		cmp a,#LKS_SPC_ON
 		bne +
+			WDSP KOF,$00
 			call !MIDI_Music
-		
 			
 		+:
 		mov a,!play
@@ -203,15 +145,20 @@ Begin:
 			mov !play,a
 			
 			call !Loop_Music
+			
+
 		+:
 		
+		call !effect_sound
 		
 		;Ticks SNES MIDI (4ms)
 		-:
 			call !SKS_IO
 			mov a,COUNTER_0
 		beq -
-		;SPCWaitMS $20
+		
+		
+
 	jmp !Loop
 	
 	
@@ -241,21 +188,14 @@ Begin:
 .ENDM
 	
 MIDI_Music:
+	mov a,!init
+	cmp a,#LKS_SPC_OFF
+	bne +
+		call !Loop_Music
+		mov a,#LKS_SPC_ON
+		mov !init,a
+	+:
 
-	SPC_INIT_HEADER 0
-	SPC_INIT_HEADER 1
-	SPC_INIT_HEADER 2
-	SPC_INIT_HEADER 3
-	SPC_INIT_HEADER 4
-	SPC_INIT_HEADER 5
-	SPC_INIT_HEADER 6
-	SPC_INIT_HEADER 7
-	
-	call !SPC_Init_Info
-	
-	
-
-		
 	SPC_MIDI_TRACK 0
 	SPC_MIDI_TRACK 1
 	SPC_MIDI_TRACK 2
@@ -294,23 +234,33 @@ MIDI_Music:
 		call !Loop_Music
 	+:
 	
+	;volume
+	mov y,!mvolume
+	mov a,#MVOLL
+	movw REG_ADD,YA
 	
+	mov y,!mvolume+1
+	mov a,#MVOLR
+	movw REG_ADD,YA
 	
 	ret
-	
+
 	
 Loop_Music:
 
+	SPC_INIT_VOICE 0
+	SPC_INIT_VOICE 1
+	SPC_INIT_VOICE 2
+	SPC_INIT_VOICE 3
+	SPC_INIT_VOICE 4
+	SPC_INIT_VOICE 5
+	SPC_INIT_VOICE 6
+	SPC_INIT_VOICE 7
 	
+	call !SPC_Init_Header
+	call !SPC_Init
 	
-	
-	mov a,#0
-	mov !ticks,a
-	mov !ticks+1,a
-	
-	
-	SPCRAMClear RAM
-	
+	SPCRAMClear RAM,$FF
 	
 	;--------
 	
@@ -318,7 +268,7 @@ Loop_Music:
 	mov a,#0
 	mov !toffset,a
 	call !upload_offset
-	
+
 	mov a,#1
 	mov !toffset,a
 	call !upload_offset
@@ -349,30 +299,26 @@ Loop_Music:
 	
 	ret
 	
-
-	
-	.include "SPC/init.aspc"
 	.include "SPC/sksio.aspc"
 	.include "SPC/playsong.aspc"
+	.include "SPC/init.aspc"
 	.include "SPC/upload.aspc"
+	.include "SPC/function.aspc"
+	.include "SPC/set.aspc"
 
-
-
-.org $1500
+.org $F00
 sampleDIR:
-.include "SPC/dir.aspc"
-
-
 
 
 /*
-PRG : 0x0200 -0x16FF
-SampleDIR : 0x1700 - 0x1AFF
-track : 0x1B00 - 0x3FFF
+PRG : 0x0200 -0x10FF
+SampleDIR : 0x1100 - 0x14FF
+header : 0x1500 - 0x15FF
+track : 0x1600 - 0x3FFF
 Sample : 0x4000 - 0xFDFF
 RAM : 0xFE00 - 0xFFBF
 
-Sample
+
 0x100: 0xBD
 
 */

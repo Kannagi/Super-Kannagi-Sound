@@ -1,0 +1,272 @@
+
+effect_sound:
+
+
+	mov a,!bkon
+	cmp a,#0
+	bne +
+		ret
+	+:
+	
+	mov a,#ENDX
+	mov REG_ADD,a
+	mov a,REG_DATA
+	eor a,#$FF
+	
+	and a,!bkon
+	mov !bkon,a
+
+	
+	
+	ret
+	
+add_offset:
+
+	
+	mov x,!arg+1
+
+	mov a,[ZP]+y
+	and a,#$80
+	cmp a,#$80
+	bne +
+		
+		inc !tmp
+		
+		mov a,[ZP]+y
+		and a,#$7F
+		mov !aoffset+1+x,a
+		
+		inc y
+		mov a,[ZP]+y
+		mov !aoffset+x,a
+				
+		ret
+	+:
+		
+		mov a,#0
+		mov !aoffset+1+x,a
+		
+		
+		mov a,[ZP]+y
+		mov !aoffset+x,a
+	
+	++:
+	ret
+	
+convert_pitch2:
+	
+	
+	
+	ret
+	
+	
+convert_pitch:
+	
+	mov a,!tpitch
+	and a,#$0F
+	mov !tmp,a
+	
+	mov a,!tpitch
+	and a,#$F0
+	lsr a
+	lsr a
+	lsr a
+	lsr a
+	
+	
+		
+	
+	;0 $10
+	cmp a,#$00
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;1 $20
+	cmp a,#$01
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		clrc
+		adc a,#1
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;2 $40
+	cmp a,#$02
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		asl a
+		clrc
+		adc a,#$02
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;3 $80
+	cmp a,#$03
+	bne +
+		mov a,#$10
+		clrc
+		adc a,!tmp
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$04
+		mov !tmp,a
+		
+		mov a,#$00
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;4 $100
+	cmp a,#$04
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$08
+		mov !tmp,a
+		
+		mov a,#$01
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;5 $200
+	cmp a,#$05
+	bne +
+		mov a,!tmp
+		clrc
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$10
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$08
+		lsr a
+		lsr a
+		lsr a
+		clrc
+		adc a,#$02
+		mov !tmp+1,a
+		
+		
+		
+		ret
+	+:
+	
+	;6 $400
+	cmp a,#$06
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$20
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0C
+		lsr a
+		lsr a
+		clrc
+		adc a,#$04
+		mov !tmp+1,a
+		
+		
+		ret
+	+:
+	
+	;7 $800
+	cmp a,#$07
+	bne +
+		mov a,!tmp
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		asl a
+		clrc
+		adc a,#$40
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0E
+		lsr a
+		clrc
+		adc a,#$08
+		mov !tmp+1,a
+		ret
+	+:
+	
+	;8 $1000
+	cmp a,#$08
+	bne +
+		mov a,#$80
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0F
+		clrc
+		adc a,#$10
+		mov !tmp+1,a
+		ret
+	+:
+	;9 $2000
+	cmp a,#$09
+	bne +
+		mov a,#0
+		mov !tmp,a
+		
+		mov a,!tpitch
+		and a,#$0F
+		asl a
+		clrc
+		adc a,#$21
+		mov !tmp+1,a
+		ret
+	+:
+	
+	ret
+	
+
+
+	
+	
+

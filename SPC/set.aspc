@@ -1,0 +1,315 @@
+
+
+pattern_effect:
+
+	
+	ret
+
+
+
+
+	
+	
+	
+set_pattern:
+	
+	
+	call !repeat
+	mov a,#1
+	mov !tmp,a
+	
+	
+	mov a,[ZP]+y
+	and a,#$0F
+	mov !tmp2,a
+	
+	
+	mov a,!tmp2
+	and a,#$01
+	cmp a,#$01
+	bne +
+		inc !tmp
+		inc y
+		mov a,[ZP]+y
+		mov !pitch+x,a
+	+:
+	
+	mov a,!tmp2
+	and a,#$02
+	cmp a,#$02
+	bne +
+		inc !tmp
+		inc y
+		mov a,[ZP]+y
+		call !set_index
+	+:
+	
+	mov a,!tmp2
+	and a,#$04
+	cmp a,#$04
+	bne +
+		inc !tmp
+		inc y
+		mov a,[ZP]+y
+		mov !volume+x,a
+	+:
+		
+	mov a,!tmp2
+	and a,#$08
+	cmp a,#$08
+	bne +
+		inc !tmp
+		inc y
+		mov a,[ZP]+y
+		call !add_offset
+
+		mov a,!aoffset+0+x
+		mov !roffset2+0+x,a
+		
+		mov a,!aoffset+1+x
+		mov !roffset2+1+x,a
+		mov x,!arg
+	+:
+	
+	mov a,!tmp
+	mov !poffset+x,a
+
+	ret
+	
+
+pattern_midi:
+	
+	mov !tmp2,a
+	
+	mov a,!tmp2
+	and a,#$01
+	cmp a,#$01
+	bne +
+		inc !tmp
+		inc y
+		mov a,[ZP]+y
+		call !set_index
+	+:
+	
+	mov a,!tmp2
+	and a,#$02
+	cmp a,#$02
+	bne +
+		inc !tmp
+		inc y
+		mov a,[ZP]+y
+		mov !volume+x,a
+	+:
+		
+	mov a,!tmp2
+	and a,#$04
+	cmp a,#$04
+	bne +
+		inc !tmp
+		inc y
+		mov a,[ZP]+y
+		call !set_channel
+		
+	+:
+	
+
+	ret
+
+	
+repeat:
+	mov x,!arg+1
+	
+	mov a,!roffset+0+x
+	mov !aoffset+0+x,a
+	
+	mov a,!roffset+1+x
+	mov !aoffset+1+x,a
+	
+	call !MIDI_offset2
+	
+
+	mov a,!roffset2+0+x
+	mov !aoffset+x,a
+	
+	mov a,!roffset2+1+x
+	mov !aoffset+1+x,a
+	
+	mov x,!arg
+
+	ret
+
+set_volume:
+	and a,#$0F
+	cmp a,#$00
+	beq +
+		push y
+		
+		mov y,#$10
+		mul ya
+		mov !volume+x,a
+		
+		pop y
+		
+		ret
+	+:
+	
+	inc !tmp
+	inc y
+	mov a,[ZP]+y
+	mov !volume+x,a
+	
+	ret
+	
+
+set_voice:
+
+
+
+	mov y,!arg+0
+	mov a,x
+	clrc
+	adc a,#SRCN
+	movw REG_ADD,YA
+	
+	mov y,!arg+1
+	mov a,x
+	clrc
+	adc a,#ADSR1
+	movw REG_ADD,YA
+	
+	mov y,!arg+2
+	mov a,x
+	clrc
+	adc a,#ADSR2
+	movw REG_ADD,YA
+	
+	mov y,!arg+3
+	mov a,x
+	clrc
+	adc a,#GAIN
+	movw REG_ADD,YA
+	
+	mov y,!arg+4
+	mov a,x
+	clrc
+	adc a,#VOLL
+	movw REG_ADD,YA
+	
+	mov y,!arg+5
+	mov a,x
+	clrc
+	adc a,#VOLR
+	movw REG_ADD,YA
+	
+	
+	mov y,!tmp+1
+	mov a,x
+	clrc
+	adc a,#RH
+	movw REG_ADD,YA
+	
+	mov y,!tmp
+	mov a,x
+	clrc
+	adc a,#RL
+	movw REG_ADD,YA
+	
+	ret
+
+set_index:
+	
+	push y
+	
+	mov y,#$4
+	mul ya
+	
+	mov y,a
+	
+	mov a,!SKSINDEX+0+y
+	mov !srcn+x,a
+	
+	mov a,!SKSINDEX+1+y
+	mov !adsr1+x,a
+	
+	mov a,!SKSINDEX+2+y
+	mov !adsr2+x,a
+	
+	mov a,!SKSINDEX+3+y
+	mov !gain+x,a
+	
+	pop y
+	ret
+	
+
+	
+	
+
+
+
+	
+
+set_channel:
+	
+	mov !tmp+1,a
+	
+	mov a,!tmp+1
+	and a,#$01
+	cmp a,#$01
+	bne +
+		mov a,!non
+		or a,!arg+2
+		mov !non,a
+		bra ++
+	+:
+		mov a,!non
+		and a,!arg+3
+		mov !non,a
+	++:
+	
+	mov a,!tmp+1
+	and a,#$02
+	cmp a,#$02
+	bne +
+		mov a,!pmon
+		or a,!arg+2
+		mov !pmon,a
+		bra ++
+	+:
+		mov a,!pmon
+		and a,!arg+3
+		mov !pmon,a
+	++:
+	
+	
+	
+	mov a,!tmp+1
+	and a,#$04
+	cmp a,#$04
+	bne +
+		mov a,!eon
+		or a,!arg+2
+		mov !eon,a
+		bra ++
+	+:
+		mov a,!eon
+		and a,!arg+3
+		mov !eon,a
+	++:
+	
+	mov a,!tmp+1
+	and a,#$08
+	cmp a,#$08
+	bne +
+		mov a,!kof
+		or a,!arg+2
+		mov !kof,a
+		bra ++
+	+:
+		mov a,!kof
+		and a,!arg+3
+		mov !kof,a
+	++:
+	
+	ret
+	
+

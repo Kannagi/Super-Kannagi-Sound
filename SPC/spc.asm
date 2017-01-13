@@ -14,6 +14,7 @@
 .DEFINE LKS_SPC_BRR_VOLUME	$20
 .DEFINE LKS_SPC_BRR_PLAY	$21
 .DEFINE LKS_SPC_BRR_PITCH	$22
+.DEFINE LKS_SPC_BRR_INIT	$23
 
 ;-----------------
 .DEFINE LKS_SPC_OFF 	$00
@@ -21,35 +22,30 @@
 .DEFINE LKS_SPC_LOOP  	$02
 
 ;-----------------
-.DEFINE LKS_SPC_track0 $1B00 ;size $600
-.DEFINE LKS_SPC_track1 $2100 ;size $600
-.DEFINE LKS_SPC_track2 $2700 ;size $500
-.DEFINE LKS_SPC_track3 $2C00 ;size $500
-.DEFINE LKS_SPC_track4 $3100 ;size $400
-.DEFINE LKS_SPC_track5 $3500 ;size $400
-.DEFINE LKS_SPC_track6 $3900 ;size $300
-.DEFINE LKS_SPC_track7 $3C00 ;size $300
 
-.DEFINE LKS_SPC_HEADER0 $3F00
-.DEFINE LKS_SPC_HEADER1 $3F10
-.DEFINE LKS_SPC_HEADER2 $3F20
-.DEFINE LKS_SPC_HEADER3 $3F30
-.DEFINE LKS_SPC_HEADER4 $3F40
-.DEFINE LKS_SPC_HEADER5 $3F50
-.DEFINE LKS_SPC_HEADER6 $3F60
-.DEFINE LKS_SPC_HEADER7 $3F70
-
-.DEFINE LKS_SPC_INFO	$3F80
-
-.DEFINE LKS_SPC_SAMPLE	$4000
-
-.DEFINE LKS_SPC_SZSPL	$BD
+.DEFINE LKS_SPC_SPLDIR $1100
+.DEFINE LKS_SPC_HEADER $1500
+.DEFINE LKS_SPC_TRACK  $1600 ;size $2A00
+.DEFINE LKS_SPC_SAMPLE $4000
+.DEFINE LKS_SPC_SZSPL  $00BD
 
 .MACRO WaitAPUIO
 	-:
 		cmp APUIO0+\1
 	bne -
 .ENDM
+
+.MACRO LKS_SPC_WAIT
+	lda LKS_SPC_VAR
+	sta APUIO0
+	-:
+		cmp APUIO0
+	beq -
+	lda APUIO0
+	sta LKS_SPC_VAR
+	stz APUIO1
+.ENDM
+
 
 .MACRO LKS_SPC_Get
 
@@ -58,17 +54,16 @@
 	sta APUIO1
 	
 	
+	LKS_SPC_WAIT
+.ENDM
+
+.MACRO LKS_SPC_Set_var
+
 	
-	lda $7E2001
-	sta APUIO0
+	lda #\1
+	sta APUIO1
 	
-	-:
-		cmp APUIO0
-	bne -
-	stz APUIO1
-	lda $7E2001
-	inc a
-	sta $7E2001
+	LKS_SPC_WAIT
 .ENDM
 
 .MACRO LKS_SPC_Set
@@ -83,16 +78,7 @@
 	lda #\3
 	sta APUIO3
 	
-	lda $7E2001
-	sta APUIO0
-	
-	-:
-		cmp APUIO0
-	bne -
-	stz APUIO1
-	lda $7E2001
-	inc a
-	sta $7E2001
+	LKS_SPC_WAIT
 .ENDM
 
 .MACRO LKS_SPC_Set2
@@ -104,16 +90,7 @@
 	ldx #\2
 	stx APUIO2
 	
-	lda $7E2001
-	sta APUIO0
-	
-	-:
-		cmp APUIO0
-	bne -
-	stz APUIO1
-	lda $7E2001
-	inc a
-	sta $7E2001
+	LKS_SPC_WAIT
 .ENDM
 
 
@@ -135,16 +112,7 @@
 		sta APUIO2
 		
 		
-		lda $7E2001
-		sta APUIO0
-		
-		-:
-			cmp APUIO0
-		bne -
-		stz APUIO1
-		lda $7E2001
-		inc a
-		sta $7E2001
+		LKS_SPC_WAIT
 		
 		
 		
@@ -172,25 +140,21 @@
 		lda.l \2,x
 		sta APUIO2
 		inx
+		
 		lda.l \2,x
 		sta APUIO3
 		
-		lda $7E2001
+		lda LKS_SPC_VAR
 		sta APUIO0
 		
-		-:
-			cmp APUIO0
-		bne -
-		stz APUIO1
-		lda $7E2001
-		inc a
-		sta $7E2001
+		LKS_SPC_WAIT
 		
 		
 		
 		inx
 		cpx #\3
-	bne --
+	bcc --
+	
 .ENDM
 
 
@@ -231,7 +195,7 @@
 		WaitAPUIO 0
 		
 		inx
-		cpx #\2
+		cpx #$1300
 	bne --
 	
 	

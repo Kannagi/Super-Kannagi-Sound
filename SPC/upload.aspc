@@ -1,85 +1,164 @@
 
 .MACRO MIDI_offset 
 
-	mov a,#0
-	mov !tmp+1,a
+	mov a,#\1
+	mov !arg+0,a
+	mov a,#2*\1
+	mov !arg+1,a
 
-	mov a,#4
-	mov !poffset+\1,a
+	mov a,#$01<<\1
+	mov !arg+2,a
 	
-	mov a,#<\2
+	mov a,#$FF-($01<<\1)
+	mov !arg+3,a
+
+
+	mov a,#3
+	mov !tmp,a
+	
+	mov a,!lecture+(2*\1)
+	mov !ZP,a
+	
+	mov a,!SKSTRACK+\1
 	clrc
-	adc a,!lecture+(2*\1)
-	mov !$0A,a
-	mov a,#>\2
 	adc a,!lecture+1+(2*\1)
-	mov !$0B,a
+	mov !ZP+1,a
 	
 	mov y,#0
 	
-	
-	
-	mov a,[ZP]+y
-	and a,#$80
-	cmp a,#$80
-	bne +
-		
-		
-		mov a,[ZP]+y
-		and a,#$7F
-		mov !tmp+1,a
-		
-		inc y
-		mov a,[ZP]+y
-		mov !tmp,a
-		
-		inc !poffset+\1
-		
-		bra ++
-	+:
-	
-		mov a,[ZP]+y
-		mov !tmp,a
-	
-	++:
-	
+	call !MIDI_offset
 
-	mov a,!offset+(2*\1)
-	clrc
-	adc	a,!tmp
-	mov !offset+(2*\1),a
-	
-	mov a,!offset+1+(2*\1)
-	adc	a,!tmp+1
-	mov !offset+1+(2*\1),a
-		
-	
-	
-	inc y
-	mov a,[ZP]+y
-	mov !pitch+\1,a
-	inc y
-	mov a,[ZP]+y
-	mov !volume+\1,a
-	
-	;-----
-	
-	inc y
-	mov a,[ZP]+y
-	and a,#$80
-	cmp a,#$80
-	bne +
-		
-
-		inc !poffset+\1
-	+:
-
-	
-	
 .ENDM
 
 
 
+MIDI_offset:
+
+	mov x,!arg
+	
+	mov a,[ZP]+y
+	cmp a,#$00
+	bne +
+		mov a,!first+x
+		cmp a,#$00
+		beq +
+			mov a,#1
+			mov !poffset+x,a
+			mov !mode+x,a
+			call !repeat
+			
+			ret
+	+:
+	
+	
+	mov a,[ZP]+y
+	cmp a,#$F0
+	bcc +
+		call !set_pattern
+		ret
+	+:
+	
+
+	;delay begin
+	call !add_offset
+	call !MIDI_offset2
+	
+	mov a,!aoffset+0+x
+	mov !roffset+0+x,a
+	
+	mov a,!aoffset+1+x
+	mov !roffset+1+x,a
+	
+	mov x,!arg
+	
+	inc y
+	mov a,[ZP]+y
+	cmp a,#$A0
+	bcc +
+		inc !tmp
+		inc y
+		
+		
+		cmp a,#$D0
+		bcc ++
+			setc
+			sbc a,#$D0
+			call !set_index
+			bra +
+		++:
+		cmp a,#$C0
+		bcc ++
+			call !set_volume
+			bra +
+		++:
+		cmp a,#$B0
+		bcc ++
+			call !set_channel
+			bra +
+		++:
+		
+		call !pattern_midi
+		
+	+:
+	
+	;pitch
+	mov a,[ZP]+y
+	mov !pitch+x,a
+	
+	
+	mov a,!first+x
+	cmp a,#$00
+	bne +
+		
+		mov a,#1
+		mov !first+x,a
+		
+		mov a,#$07
+		call !pattern_midi
+		
+		
+	+:
+	
+	;-----
+	;delay end
+	inc y
+	call !add_offset
+	
+	mov a,!aoffset+0+x
+	mov !roffset2+0+x,a
+	
+	mov a,!aoffset+1+x
+	mov !roffset2+1+x,a
+	
+	
+	mov x,!arg
+	mov a,!tmp
+	mov !poffset+x,a
+	
+	ret
+
+.MACRO MIDI_offset2
+
+	mov x,#2*\1
+	call !MIDI_offset2
+		
+
+.ENDM
+
+MIDI_offset2:
+	
+	mov a,!offset+x
+	clrc
+	adc	a,!aoffset+x
+	mov !offset+x,a
+	
+	mov a,!offset+1+x
+	adc	a,!aoffset+1+x
+	mov !offset+1+x,a
+		
+	
+	ret
+	
 upload_offset:
 
 	
@@ -120,104 +199,36 @@ upload_offset:
 	ret
 
 upload_offsetc0:
-	MIDI_offset 0,track0
+	MIDI_offset 0
 	ret
 	
 upload_offsetc1:
-	MIDI_offset 1,track1
+	MIDI_offset 1
 	ret
 	
 upload_offsetc2:
-	MIDI_offset 2,track2
+	MIDI_offset 2
 	ret
 	
 upload_offsetc3:
-	MIDI_offset 3,track3
+	MIDI_offset 3
 	ret
 	
 upload_offsetc4:
-	MIDI_offset 4,track4
+	MIDI_offset 4
 	ret
 	
 upload_offsetc5:
-	MIDI_offset 5,track5
+	MIDI_offset 5
 	ret
 	
 upload_offsetc6:
-	MIDI_offset 6,track6
+	MIDI_offset 6
 	ret
 	
 upload_offsetc7:
-	MIDI_offset 7,track7
+	MIDI_offset 7
 	ret
-
-.MACRO MIDI_offset2
-
-
-	
-	mov a,#0
-	mov !tmp+1,a
-	
-	mov a,#<\2
-	clrc
-	adc a,!lecture+(2*\1)
-	mov !$0A,a
-	mov a,#>\2
-	adc a,!lecture+1+(2*\1)
-	mov !$0B,a
-	
-	
-	mov y,#0
-	mov a,[ZP]+y
-	and a,#$80
-	cmp a,#$80
-	bne +
-		mov y,#4
-		bra ++
-	+:
-		mov y,#3
-	++:
-	
-	mov a,[ZP]+y
-	and a,#$80
-	cmp a,#$80
-	bne +
-		
-		
-		mov a,[ZP]+y
-		and a,#$7F
-		mov !tmp+1,a
-		
-		inc y
-		mov a,[ZP]+y
-		mov !tmp,a
-				
-		bra ++
-	+:
-	
-		mov a,[ZP]+y
-		mov !tmp,a
-	
-	++:
-	
-
-	
-	mov a,!offset+(2*\1)
-	clrc
-	adc	a,!tmp
-	mov !offset+(2*\1),a
-	
-	mov a,!offset+1+(2*\1)
-	adc	a,!tmp+1
-	mov !offset+1+(2*\1),a
-		
-	
-	
-	
-
-	
-	
-.ENDM
 	
 upload_offset2:
 
@@ -258,34 +269,34 @@ upload_offset2:
 	ret
 	
 upload_offset2c0:
-	MIDI_offset2 0,track0
+	MIDI_offset2 0
 	ret
 	
 upload_offset2c1:
-	MIDI_offset2 1,track1
+	MIDI_offset2 1
 	ret
 
 upload_offset2c2:
-	MIDI_offset2 2,track2
+	MIDI_offset2 2
 	ret
 	
 upload_offset2c3:
-	MIDI_offset2 3,track3
+	MIDI_offset2 3
 	ret
 	
 upload_offset2c4:
-	MIDI_offset2 4,track4
+	MIDI_offset2 4
 	ret
 	
 upload_offset2c5:
-	MIDI_offset2 5,track5
+	MIDI_offset2 5
 	ret
 	
 upload_offset2c6:
-	MIDI_offset2 6,track6
+	MIDI_offset2 6
 	ret
 	
 upload_offset2c7:
-	MIDI_offset2 7,track7
+	MIDI_offset2 7
 	ret
 	
