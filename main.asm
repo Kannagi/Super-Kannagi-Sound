@@ -19,7 +19,8 @@ Int:
 Main:
 	
 	sei
-    xce
+	clc
+	xce
 
 	
 	rep #$10	;16 bit xy

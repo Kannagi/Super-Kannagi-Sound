@@ -691,26 +691,40 @@
 	stz $210B
 	stz $210C
 	stz $210D
+	stz $210D
+	stz $210E
 	stz $210E
 	stz $210F
-	
+	stz $210F
+
+	stz $2110	
 	stz $2110
 	stz $2111
+	stz $2111
+	stz $2112
 	stz $2112
 	stz $2113
+	stz $2113
 	stz $2114
-	stz $2115 
+	stz $2114
+	stz $2115
 	stz $2116
 	stz $2117
 	;stz $2118 
 	;stz $2119 
 	stz $211A
-	stz $211B 
+	stz $211B
+	stz $211B
+	stz $211C
 	stz $211C
 	stz $211D
-	stz $211E 
+	stz $211D
+	stz $211E
+	stz $211E
+	stz $211F
 	stz $211F
 	
+	stz $2120
 	stz $2120
 	stz $2121
 	;stz $2122 
@@ -744,17 +758,17 @@
 	stz $4205
 	stz $4206
 	*/
-	stz $4207
-	stz $4208
-	stz $4209
-	stz $420A
+	;stz $4207
+	;stz $4208
+	;stz $4209
+	;stz $420A
 	stz $420B
 	stz $420C
 	stz $420D
 	
-	stz $4016
-	stz $4017
-	;lda $4210
+	;stz $4016
+	;stz $4017
+	lda $4210
 .ENDM
 
 
