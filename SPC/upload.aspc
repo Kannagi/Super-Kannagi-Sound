@@ -72,6 +72,8 @@ MIDI_offset:
 	mov x,!arg
 	
 	inc y
+	-:
+
 	mov a,[ZP]+y
 	cmp a,#$A0
 	bcc +
@@ -84,20 +86,24 @@ MIDI_offset:
 			setc
 			sbc a,#$D0
 			call !set_index
-			bra +
+			bra -
 		++:
 		cmp a,#$C0
 		bcc ++
 			call !set_volume
-			bra +
+			bra -
 		++:
 		cmp a,#$B0
 		bcc ++
 			call !set_channel
-			bra +
+			bra -
 		++:
-		
-		call !pattern_midi
+			dec !tmp
+			dec y
+			call !pattern_midi
+			inc !tmp
+			inc y
+			bra -
 		
 	+:
 	
